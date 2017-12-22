@@ -2,12 +2,12 @@
 
 {% block title %}
   {{ board.name }} - {{ block.super }}
-{% endblock %}
+{% endblock title %}
 
 {% block breadcrumb %}
   <li class="breadcrumb-item"><a href="{% url 'home' %}">Boards</a></li>
   <li class="breadcrumb-item active">{{ board.name }}</li>
-{% endblock %}
+{% endblock breadcrumb %}
 
 {% block content %}
 <div class="mb-4">
@@ -35,4 +35,4 @@
       {% endfor %}
     </tbody>
   </table>
-{% endblock %}
+{% endblock content %}
