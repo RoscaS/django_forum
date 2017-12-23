@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 
+
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -39,6 +41,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'widget_tweaks',
+
+    'django_extensions',
+
 
     'accounts',
     'boards',
@@ -129,6 +134,10 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+
+# https://stackoverflow.com/questions/1236285/how-do-i-see-stdout-when-running-django-tests
+NOSE_ARGS = ['--nocapture',
+             '--nologcapture',]
 
 
 LOGIN_URL = 'login'

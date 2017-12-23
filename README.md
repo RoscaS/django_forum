@@ -4,6 +4,35 @@
 
 # Divers
 
+
+## django_extensions
+
+* [More](https://django-extensions.readthedocs.io/en/latest/shell_plus.html#interactive-python-shells)
+
+```
+pip install django_extensions
+```
+
+```
+INSTALLED_APPS = (
+     ....
+    'django_extensions'
+)
+```
+
+Activate Ipython shell
+```
+python manage.py shell_plus
+```
+
+Encore mieux:
+```
+pip install 'ipython[notebook]'
+python manage.py shell_plus --notebook
+```
+
+
+
 ## get_object_or_404
 
 ```py
@@ -41,6 +70,62 @@ Using the **Board** model as a reference. Uppercase **Board** refers to the clas
 * `Board.objects.create(name='...', description='...')`: Create and save an object in the database
 * `Board.objects.all()` : List all objects
 * `Board.objects.get(field = value)` Get a single object identified by a field
+
+
+
+## A bit more complicated querys
+
+* Getting the current topics count:
+```py
+>>> board = Board.objects.get(name='Django')
+>>> board.topics.all()
+
+<QuerySet [<Topic: My first topic>, <Topic: Another one>, <Topic: J'aime la viande>, <Topic: La lune>, <Topic: Blanche comme neige>, <Topic: J'aime la viande fraiche !!!>, <Topic: Une route une fourchette>]>
+>>> board.topics.all().count()
+
+7
+```
+
+* The number of posts within a board is a little bit trickier because Post is not directly related to Board
+
+```py
+>>> from boards.models import Post
+>>> Post.objects.all()
+>>>
+<QuerySet [<Post: La pie niche haut, l'oie ni...>, <Post: Bacon ipsum dolor amet beef...>, <Post: Pork chop pancetta chuck, b...>, <Post: Grande et belle, elle est p...>, <Post: De son prénom bien aimé par...>, <Post: Owiiiiiii viens, viens, on ...>, <Post: Je t'aime mon coeur!>, <Post: Oui, oui, bacon ipsum lolil...>, <Post: Moi aussi ma chache !>, <Post: Getting there, what about you?>, <Post: So far so good>]>
+>>> Post.objects.count()
+
+11
+```
+
+* Here we have 11 posts. But not all of them belongs to the “Django” board. Here is how we can filter it:
+
+```py
+>>> from boards.models import Board, Post
+>>> board = Board.objects.get(name='Django')
+>>> Post.objects.filter(topic__board=board)
+
+<QuerySet [<Post: La pie niche haut, l'oie ni...>, <Post: Je t'aime mon coeur!>, <Post: Moi aussi ma chache !>, <Post: Bacon ipsum dolor amet beef...>, <Post: Oui, oui, bacon ipsum lolil...>, <Post: Pork chop pancetta chuck, b...>, <Post: Grande et belle, elle est p...>, <Post: De son prénom bien aimé par...>, <Post: Owiiiiiii viens, viens, on ...>]>
+
+>>> Post.objects.filter(topic__board=board).count()
+9
+```
+The double underscores `topic__board` is used to navigate through the models’ relationships. Under the hoods, Django builds the bridge between the Board - Topic - Post, and build a SQL query to retrieve just the posts that belong to a specific board.
+
+* Identify last posted post
+Order by the `created_at` field, is getting the most recent first:
+```py
+>>> Post.objects.filter(topic__board=board).order_by('-created_at')
+
+<QuerySet [<Post: Moi aussi ma chache !>, <Post: Oui, oui, bacon ipsum lolil...>, <Post: Je t'aime mon coeur!>, <Post: Owiiiiiii viens, viens, on ...>, <Post: De son prénom bien aimé par...>, <Post: Grande et belle, elle est p...>, <Post: Pork chop pancetta chuck, b...>, <Post: Bacon ipsum dolor amet beef...>, <Post: La pie niche haut, l'oie ni...>]>
+```
+
+We can use the first() method to just grab the result that interest us
+
+```py
+>>> Post.objects.filter(topic__board=board).order_by('-created_at').first()
+<Post: Moi aussi ma chache !>
+```
 
 
 # Dynamic Urls

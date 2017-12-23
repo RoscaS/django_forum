@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-
+from django.utils.text import Truncator
 
 class Board(models.Model):
     name        = models.CharField(max_length=30, unique=True)
@@ -31,4 +31,6 @@ class Post(models.Model):
     updated_by = models.ForeignKey(User, null=True, related_name='+', on_delete=None)
 
     def __str__(self):
-        return self.message
+        truncated_message = Truncator(self.message)
+        return truncated_message.chars(30)
+
