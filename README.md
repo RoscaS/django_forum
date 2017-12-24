@@ -58,10 +58,25 @@ def board_topics(request, pk):
     return render(request, 'topics.html', {'board': board})
 ```
 
+# Migration
+
+>Migration is a fundamental part of Web development with Django. It’s how we evolve our application’s models keeping the models’ files synchronized with the database.
+
+* `python manage.py makemigrations` : Create the database/regenerate db
+* `python manage.py migrate` : apply the migration we generated to the database
+
+When we first run the command `python manage.py migrate` Django grab all migration files and generate the database schema.
+
+When Django applies a migration, it has a special table called django_migrations. In this table, Django registers all the applied migrations.
+
+So if we try to run the command again, Django will know there’s nothing to do.
+<br>
+If we want to add a new field to a model we have to use `python manage.py makemigrations` after adding the code in the model. The `makemigrations` command will automatically generate a file that looks like that : `XXXX_tableName_modificationName.py` which will be used to modify the database adding the new field.
+
+To apply the migration we're using `python manage.py migrate`
 
 
-
-# Summary of model's operations
+# Some model's operations
 
 Using the **Board** model as a reference. Uppercase **Board** refers to the class, lowercase **board** refere to an instance of the **Board** model class:
 
@@ -75,7 +90,8 @@ Using the **Board** model as a reference. Uppercase **Board** refers to the clas
 
 ## A bit more complicated querys
 
-* Getting the current topics count:
+* **Getting the current topics count:**
+
 ```py
 >>> board = Board.objects.get(name='Django')
 >>> board.topics.all()
@@ -86,7 +102,7 @@ Using the **Board** model as a reference. Uppercase **Board** refers to the clas
 7
 ```
 
-* The number of posts within a board is a little bit trickier because Post is not directly related to Board
+* **The number of posts within a board is a little bit trickier because Post is not directly related to Board**
 
 ```py
 >>> from boards.models import Post
@@ -98,7 +114,7 @@ Using the **Board** model as a reference. Uppercase **Board** refers to the clas
 11
 ```
 
-* Here we have 11 posts. But not all of them belongs to the “Django” board. Here is how we can filter it:
+* **Here we have 11 posts. But not all of them belongs to the “Django” board. Here is how we can filter it:**
 
 ```py
 >>> from boards.models import Board, Post
@@ -112,8 +128,8 @@ Using the **Board** model as a reference. Uppercase **Board** refers to the clas
 ```
 The double underscores `topic__board` is used to navigate through the models’ relationships. Under the hoods, Django builds the bridge between the Board - Topic - Post, and build a SQL query to retrieve just the posts that belong to a specific board.
 
-* Identify last posted post
-Order by the `created_at` field, is getting the most recent first:
+* **Identify last posted post Order by the `created_at` field, is getting the most recent first:**
+
 ```py
 >>> Post.objects.filter(topic__board=board).order_by('-created_at')
 
@@ -127,7 +143,7 @@ We can use the first() method to just grab the result that interest us
 <Post: Moi aussi ma chache !>
 ```
 
-* Implementation
+* **Implementation**
 
 ```py
 class Board(models.Model):
@@ -144,6 +160,46 @@ class Board(models.Model):
     def get_last_post(self):
         return Post.objects.filter(topic__board=self).order_by('-created_at').first()
 ```
+
+>Note that we are using `self`, because **this method will be used by a Board instance**. So that means we are using this instance to filter the QuerySet.
+
+* **More efficient way**
+
+```py
+from django.db.models import Count
+from boards.models import Board
+
+board = Board.objects.get(name='Django')
+
+topics = board.topics.order_by('-last_updated').annotate(replies=Count('posts'))
+
+for topic in topics:
+    print(topic.replies)
+
+2
+4
+2
+1
+```
+
+Here we are using the `annotate` **QuerySet** method to generate a new "column" on the fly. This new column, which will be translated into a property, accessible via topic.replies contain the count of posts a given topic has.
+
+We can do just a minor fix because the replies should not consider the starter topic (which is also a Post instance).
+
+So here is how we do it:
+
+```py
+topics = board.topics.order_by('-last_updated').annotate(replies=Count('posts') - 1)
+
+for topic in topics:
+    print(topic.replies)
+
+1
+3
+1
+0
+```
+
 
 
 # Dynamic Urls
