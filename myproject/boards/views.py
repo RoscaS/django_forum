@@ -1,11 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count
 
-from django.views.generic import UpdateView
+from django.views.generic import UpdateView, ListView
 from django.utils import timezone
 
 from .models import Board, Topic, Post
@@ -13,11 +14,11 @@ from .forms import NewTopicForm, PostForm
 
 
 @method_decorator(login_required, name='dispatch')
-class PostUpdateView(UpdateView):
-    model = Post
-    fields = ('message', )
+class PostUpdateView(UpdateView): # GCBV
+    model         = Post
+    fields        = ('message', )
     template_name = 'edit_post.html'
-    pk_url_kwarg = 'post_pk'
+    pk_url_kwarg  = 'post_pk'
     context_object_name = 'post'
 
     def get_queryset(self): # A topic can only be edited by the owner
@@ -36,15 +37,38 @@ class PostUpdateView(UpdateView):
         )
 
 
-def home(request):
-    boards = Board.objects.all()
-    return render(request, 'home.html', {'boards': boards})
+class BoardListView(ListView): # GCBV replacing the old `home` view
+    model               = Board
+    context_object_name = 'boards'
+    template_name       = 'home.html'
+
+# def home(request):
+#     boards = Board.objects.all()
+#     return render(request, 'home.html', {'boards': boards})
 
 
-def board_topics(request, pk):
-    board = get_object_or_404(Board, pk=pk)
-    topics = board.topics.order_by('-last_updated').annotate(replies=Count('posts')-1)
-    return render(request, 'topics.html', {'board': board, 'topics': topics})
+
+class TopicListView(ListView):
+    '''
+    `paginator`, `page_obj`, `is_paginated`, `object_list`
+    Are available to use in template.
+    Variable set in `context_object_name` is alias for `object_list`.
+
+    '''
+    model               = Topic
+    context_object_name = 'topics'
+    template_name       = 'topics.html'
+    paginate_by         =  10
+
+    def get_context_data(self, **kwargs):
+        kwargs['board'] = self.board
+        return super().get_context_data(**kwargs)
+
+    def get_queryset(self):
+        self.board = get_object_or_404(Board, pk=self.kwargs.get('pk'))
+        queryset = self.board.topics.order_by(
+            '-last_updated').annotate(replies=Count('posts')-1)
+        return queryset
 
 
 @login_required
@@ -68,11 +92,30 @@ def new_topic(request, pk):
     return render(request, 'new_topic.html', {'board': board, 'form': form})
 
 
-def topic_posts(request, pk, topic_pk):
-    topic = get_object_or_404(Topic, board__pk=pk, pk=topic_pk)
-    topic.views += 1
-    topic.save()
-    return render(request, 'topic_posts.html', {'topic': topic})
+# def topic_posts(request, pk, topic_pk):
+#     topic = get_object_or_404(Topic, board__pk=pk, pk=topic_pk)
+#     topic.views += 1
+#     topic.save()
+#     return render(request, 'topic_posts.html', {'topic': topic})
+
+
+class PostListView(ListView):
+    model = Post
+    context_object_name = 'posts'
+    template_name = 'topics_posts.html'
+    paginate_by = 2
+
+    def get_context_data(self, **kwargs):
+        self.topic.views += 1
+        self.topic.save()
+        kwargs['topic'] = self.topic
+        return super().get_context_data(**kwargs)
+
+    def get_queryset(self):
+        self.topic = get_object_or_404(
+            Topic, board__pk=self.kwargs.get('pk'), pk=self.kwargs.get('topic_pk'))
+        queryset = self.topic.posts.order_by('created_at')
+        return queryset
 
 
 @login_required

@@ -551,3 +551,104 @@ And now we can add the link to the edit page:
 ```
 
 Observe now how we are navigating through the post object: `post.topic.board.pk`. If we didn’t set the `context_object_name` to **post**, it would be available as: `object.topic.board.pk`.
+
+
+# Pagination
+
+`python manage.py shell`
+
+```py
+from boards.models import Topic
+
+# All the topics in the app
+Topic.objects.count()
+107
+
+# Just the topics in the Django board
+Topic.objects.filter(board__name='Django').count()
+104
+
+# Let's save this queryset into a variable to paginate it
+queryset = Topic.objects.filter(board__name='Django').order_by('-last_updated')
+```
+
+It’s very important always define an ordering to a QuerySet you are going to paginate! Otherwise, it can give you inconsistent results.
+
+Now let’s import the Paginator utility
+
+```py
+from django.core.paginator import Paginator
+
+paginator = Paginator(queryset, 20)
+```
+Here we are telling Django to paginate our QuerySet in pages of 20 each. Now let’s explore some of the paginator properties:
+
+```py
+# count the number of elements in the paginator
+paginator.count
+104
+
+# total number of pages
+# 104 elements, paginating 20 per page gives you 6 pages
+# where the last page will have only 4 elements
+paginator.num_pages
+6
+
+# range of pages that can be used to iterate and create the
+# links to the pages in the template
+paginator.page_range
+range(1, 7)
+
+# returns a Page instance
+paginator.page(2)
+<Page 2 of 6>
+
+page = paginator.page(2)
+
+type(page)
+django.core.paginator.Page
+
+type(paginator)
+django.core.paginator.Paginator
+```
+
+Here we have to pay attention because if we try to get a page that doesn’t exist, the Paginator will throw an exception:
+
+```py
+paginator.page(7)
+EmptyPage: That page contains no results
+```
+
+Or if we try to pass an arbitrary parameter, which is not a page number:
+
+```py
+paginator.page('abc')
+PageNotAnInteger: That page number is not an integer
+```
+
+We have to keep those details in mind when designing the user interface.
+
+Now let’s explore the attributes and methods offered by the Page class a little bit:
+
+```py
+page = paginator.page(1)
+
+# Check if there is another page after this one
+page.has_next()
+True
+
+# If there is no previous page, that means this one is the first page
+page.has_previous()
+False
+
+page.has_other_pages()
+True
+
+page.next_page_number()
+2
+
+# Take care here, since there is no previous page,
+# if we call the method `previous_page_number() we will get an exception:
+page.previous_page_number()
+EmptyPage: That page number is less than 1
+```
