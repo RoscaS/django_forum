@@ -5,6 +5,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count
+from django.urls import reverse_lazy
 
 from django.views.generic import UpdateView, ListView
 from django.utils import timezone
@@ -41,11 +42,6 @@ class BoardListView(ListView): # GCBV replacing the old `home` view
     model               = Board
     context_object_name = 'boards'
     template_name       = 'home.html'
-
-# def home(request):
-#     boards = Board.objects.all()
-#     return render(request, 'home.html', {'boards': boards})
-
 
 
 class TopicListView(ListView):
@@ -92,13 +88,6 @@ def new_topic(request, pk):
     return render(request, 'new_topic.html', {'board': board, 'form': form})
 
 
-# def topic_posts(request, pk, topic_pk):
-#     topic = get_object_or_404(Topic, board__pk=pk, pk=topic_pk)
-#     topic.views += 1
-#     topic.save()
-#     return render(request, 'topic_posts.html', {'topic': topic})
-
-
 class PostListView(ListView):
     model = Post
     context_object_name = 'posts'
@@ -132,3 +121,5 @@ def reply_topic(request, pk, topic_pk):
     else:
         form = PostForm()
     return render(request, 'reply_topic.html', {'topic': topic, 'form': form})
+
+
