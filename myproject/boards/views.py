@@ -1,4 +1,6 @@
 from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count
@@ -10,6 +12,7 @@ from .models import Board, Topic, Post
 from .forms import NewTopicForm, PostForm
 
 
+@method_decorator(login_required, name='dispatch')
 class PostUpdateView(UpdateView):
     model = Post
     fields = ('message', )
@@ -17,13 +20,20 @@ class PostUpdateView(UpdateView):
     pk_url_kwarg = 'post_pk'
     context_object_name = 'post'
 
+    def get_queryset(self): # A topic can only be edited by the owner
+        queryset = super().get_queryset()
+        return queryset.filter(created_by=self.request.user)
+
     def form_valid(self, form):
         post = form.save(commit=False)
         post.updated_by = self.request.user
         post.updated_at = timezone.now()
         post.save()
-        return redirect('topic_posts', pk=post.topic.board.pk, topic_pk=post.topic.pk)
-
+        return redirect(
+            'topic_posts', 
+            pk = post.topic.board.pk, 
+            topic_pk = post.topic.pk
+        )
 
 
 def home(request):
