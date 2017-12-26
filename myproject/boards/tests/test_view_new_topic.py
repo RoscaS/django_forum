@@ -1,23 +1,16 @@
 from django.contrib.auth.models import User
-from django.urls import resolve, reverse
 from django.test import TestCase
+from django.urls import resolve, reverse
 
 from ..forms import NewTopicForm
-from ..views import board_topics, new_topic
-from ..models import Board, Topic, Post
+from ..models import Board, Post, Topic
+from ..views import new_topic
 
 
 class NewTopicTests(TestCase):
     def setUp(self):
-        Board.objects.create(
-            name        = 'Django', 
-            description = 'Django board.'
-        )
-        User.objects.create_user(
-            username = 'john', 
-            email    = 'john@doe.com', 
-            password = '123'
-        )
+        Board.objects.create(name='Django', description='Django board.')
+        User.objects.create_user(username='john', email='john@doe.com', password='123')
         self.client.login(username='john', password='123')
 
     def test_new_topic_view_success_status_code(self):
@@ -57,7 +50,7 @@ class NewTopicTests(TestCase):
             'subject': 'Test title',
             'message': 'Lorem ipsum dolor sit amet'
         }
-        response = self.client.post(url, data)
+        self.client.post(url, data)
         self.assertTrue(Topic.objects.exists())
         self.assertTrue(Post.objects.exists())
 
@@ -87,17 +80,13 @@ class NewTopicTests(TestCase):
         self.assertFalse(Topic.objects.exists())
         self.assertFalse(Post.objects.exists())
 
+
 class LoginRequiredNewTopicTests(TestCase):
     def setUp(self):
-        Board.objects.create(name='Django', description='Django board')
+        Board.objects.create(name='Django', description='Django board.')
         self.url = reverse('new_topic', kwargs={'pk': 1})
         self.response = self.client.get(self.url)
-    
+
     def test_redirection(self):
         login_url = reverse('login')
-        self.assertRedirects(self.response, '{login_url}?next={url}'.format(
-            login_url=login_url, url=self.url))
-
-
-
-
+        self.assertRedirects(self.response, '{login_url}?next={url}'.format(login_url=login_url, url=self.url))
