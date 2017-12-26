@@ -9,6 +9,7 @@ from django.urls import reverse_lazy
 
 from django.views.generic import UpdateView, ListView
 from django.utils import timezone
+from django.urls import reverse
 
 from .models import Board, Topic, Post
 from .forms import NewTopicForm, PostForm
@@ -38,7 +39,7 @@ class PostUpdateView(UpdateView): # GCBV
         )
 
 
-class BoardListView(ListView): # GCBV replacing the old `home` view
+class BoardListView(ListView): 
     model               = Board
     context_object_name = 'boards'
     template_name       = 'home.html'
@@ -92,11 +93,15 @@ class PostListView(ListView):
     model = Post
     context_object_name = 'posts'
     template_name = 'topics_posts.html'
-    paginate_by = 2
+    paginate_by = 10
 
     def get_context_data(self, **kwargs):
-        self.topic.views += 1
-        self.topic.save()
+        session_key= f'viewed_topic_{self.topic.pk}'
+        if not self.request.session.get(session_key, False):
+            self.topic.views += 1
+            self.topic.save()
+            self.request.session[session_key] = True
+
         kwargs['topic'] = self.topic
         return super().get_context_data(**kwargs)
 
@@ -117,7 +122,14 @@ def reply_topic(request, pk, topic_pk):
             post.topic = topic
             post.created_by = request.user
             post.save()
-            return redirect('topic_posts', pk=pk, topic_pk=topic_pk)
+
+            topic.last_updated = timezone.now()
+            topic.save()
+
+            topic_url = reverse('topic_posts', kwargs={'pk': pk, 'topic_pk': topic_pk})
+            topic_post_url = f'{topic_url}?page={topic.get_page_count()}#{post.pk}'
+
+            return redirect(topic_post_url)
     else:
         form = PostForm()
     return render(request, 'reply_topic.html', {'topic': topic, 'form': form})

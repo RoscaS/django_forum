@@ -1,32 +1,32 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% load static %}
 
-{% block title %}Post a reply{% endblock title %}
+{% block title %}Post a reply{% endblock %}
 
 {% block stylesheet %}
   <link rel="stylesheet" href="{% static 'css/simplemde.min.css' %}">
-{% endblock stylesheet %}
+{% endblock %}
 
 {% block javascript %}
   <script src="{% static 'js/simplemde.min.js' %}"></script>
   <script>
     var simplemde = new SimpleMDE();
   </script>
-{% endblock javascript %}
+{% endblock %}
 
-{% block breadcrump %}
+{% block breadcrumb %}
   <li class="breadcrumb-item"><a href="{% url 'home' %}">Boards</a></li>
   <li class="breadcrumb-item"><a href="{% url 'board_topics' topic.board.pk %}">{{ topic.board.name }}</a></li>
   <li class="breadcrumb-item"><a href="{% url 'topic_posts' topic.board.pk topic.pk %}">{{ topic.subject }}</a></li>
   <li class="breadcrumb-item active">Post a reply</li>
-{% endblock breadcrump %}
+{% endblock %}
 
 {% block content %}
 
-<form class="mb-4" method="post">
+<form method="post" class="mb-4" novalidate>
   {% csrf_token %}
-  {% include "includes/_form.html" %}
+  {% include 'includes/_form.html' %}
   <button type="submit" class="btn btn-success">Post a reply</button>
 </form>
 
