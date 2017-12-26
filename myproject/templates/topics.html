@@ -27,7 +27,7 @@
     <tbody>
       {% for topic in topics %}
         <tr>
-          <td><a href="{% url 'topic_posts' board.pk topic.pk %}">{{ topic.subject }}</a></td>
+          <td><a href="{% url 'topic_posts' board.pk topic.pk %}"><strong>{{ topic.subject }}</strong></a></td>
           <td>{{ topic.starter.username }}</td>
             {% if topic.replies == -1 %}
               <td>0</td>

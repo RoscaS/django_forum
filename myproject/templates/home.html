@@ -18,7 +18,7 @@
       {% for board in boards %}
         <tr>
           <td>
-            <a href="{% url 'board_topics' board.pk %}">{{ board.name }}</a>
+            <a href="{% url 'board_topics' board.pk %}"><strong>{{ board.name }}</strong></a>
             <small class="text-muted d-block">{{ board.description }}</small>
           </td>
           <td class="align-middle">
